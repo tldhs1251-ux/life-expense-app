@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>생활비 관리</title>
+<meta name="theme-color" content="#17191c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="생활비 관리">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="180x180" href="icon-180.png">
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;background:#f5f6f8;color:#17191c;
+  font-family:-apple-system,BlinkMacSystemFont,"Noto Sans KR","Segoe UI",sans-serif;
+}
+.app{max-width:520px;margin:auto;min-height:100vh;padding:24px 18px 110px}
+h1{font-size:27px;margin:8px 0 4px;font-weight:800}
+.sub{color:#777;margin-bottom:22px}
+.card{background:#fff;border-radius:22px;padding:24px;box-shadow:0 5px 22px #0000000b}
+.total{text-align:center}
+.label{font-size:14px;color:#888}
+.amount{font-size:38px;font-weight:850;margin:8px 0}
+.amount span{font-size:20px;color:#888;font-weight:600}
+.progress{height:13px;background:#eceef1;border-radius:20px;overflow:hidden;margin:20px 0 12px}
+.bar{height:100%;width:0%;background:#17191c;border-radius:20px;transition:.25s}
+.stats{display:flex;justify-content:space-between;color:#777;font-size:14px}
+.stats b{color:#17191c;font-size:16px}
+.btn{
+ width:100%;border:0;border-radius:17px;padding:17px;margin-top:16px;
+ background:#17191c;color:white;font-size:17px;font-weight:750;cursor:pointer
+}
+.btn.secondary{background:#eef0f3;color:#222}
+.section{margin-top:20px}
+.section-title{font-size:18px;font-weight:800;margin:0 0 12px}
+.item{
+ display:flex;justify-content:space-between;align-items:center;
+ background:#fff;border-radius:15px;padding:15px 16px;margin-bottom:8px
+}
+.item small{display:block;color:#999;margin-top:3px}
+.item strong{font-size:16px}
+.delete{border:0;background:#f0f1f3;border-radius:10px;padding:8px 10px;margin-left:10px}
+.empty{text-align:center;color:#999;background:#fff;padding:25px;border-radius:15px}
+.modal{
+ position:fixed;inset:0;background:#0007;display:none;align-items:flex-end;justify-content:center;z-index:10
+}
+.modal.show{display:flex}
+.sheet{
+ width:min(520px,100%);background:white;border-radius:25px 25px 0 0;padding:24px 20px 30px
+}
+.sheet h2{margin:0 0 18px}
+input{
+ width:100%;padding:17px;border:1px solid #ddd;border-radius:14px;
+ font-size:20px;outline:none
+}
+input:focus{border-color:#555}
+.row{display:flex;gap:9px;margin-top:10px}
+.row button{flex:1}
+.note{font-size:12px;color:#999;margin-top:10px}
+.setup{margin-top:15px;font-size:13px;color:#777;text-align:center;text-decoration:underline;cursor:pointer}
+
+.calendar-wrap{margin-top:20px}
+.saving-card{margin-top:14px}
+.saving-value{font-size:30px;font-weight:850;margin:6px 0}
+.saving-value.plus{color:#16803c}
+.saving-value.minus{color:#d93636}
+.saving-info{font-size:13px;color:#888;line-height:1.6}
+
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-title{font-size:20px;font-weight:800}
+.cal-nav{display:flex;gap:6px}
+.cal-nav button{border:0;background:#eef0f3;border-radius:10px;width:38px;height:34px;font-size:18px}
+.week{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;color:#888;font-size:12px;margin-bottom:6px}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.day{
+ min-height:68px;background:#fff;border-radius:11px;padding:7px 5px;
+ text-align:left;cursor:pointer;border:1px solid transparent;overflow:hidden
+}
+.day.muted{background:#f1f2f4;color:#aaa}
+.day.today{border-color:#222}
+.day.selected{background:#17191c;color:#fff}
+.day-num{font-size:13px;font-weight:700}
+.day-spent{font-size:11px;margin-top:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.day.selected .day-spent{color:#fff}
+.day-detail{margin-top:12px}
+.detail-head{font-size:17px;font-weight:800;margin-bottom:9px}
+
+.view-toggle{display:flex;background:#eef0f3;border-radius:12px;padding:3px;margin-bottom:14px}
+.view-toggle button{flex:1;border:0;background:transparent;padding:10px;border-radius:9px;font-weight:700}
+.view-toggle button.active{background:#fff;box-shadow:0 2px 7px #00000012}
+.year-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.mini-month{background:#f7f8f9;border-radius:13px;padding:10px;cursor:pointer}
+.mini-title{font-size:13px;font-weight:800;margin-bottom:7px}
+.mini-week,.mini-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.mini-week{font-size:8px;color:#999;margin-bottom:3px}
+.mini-day{font-size:8px;padding:4px 0;border-radius:4px;min-height:16px}
+.mini-day.has-spent{font-weight:800;background:#ddd}
+.mini-total{text-align:right;font-size:10px;font-weight:800;margin-top:7px}
+@media(max-width:360px){.year-grid{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:600px){.app{padding-top:40px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>생활비 관리</h1>
+  <div class="sub" id="month"></div>
+
+  <div class="card total">
+    <div class="label">현재 지출 / 생활비 한도</div>
+    <div class="amount"><span id="spent">0</span> <span>/</span> <span id="budget">400,000</span><span>원</span></div>
+    <div class="progress"><div class="bar" id="bar"></div></div>
+    <div class="stats">
+      <div>남은 금액<br><b id="remain">400,000원</b></div>
+      <div>사용률<br><b id="percent">0%</b></div>
+    </div>
+  </div>
+
+  <div class="card saving-card">
+    <div class="label">아낀 금액</div>
+    <div class="saving-value plus" id="savingValue">+0원</div>
+    <div class="saving-info">
+      하루 기준 예산: <b id="dailyBudget">계산 중...</b><br>
+      그 달의 실제 날짜 수를 기준으로 계산하며, 하루 예산보다 적게 쓴 금액은 더하고 많이 쓴 금액은 뺍니다.
+    </div>
+  </div>
+
+  <button class="btn" onclick="openAdd()">＋ <span id="addButtonText">금액 추가</span></button>
+  <button class="btn secondary" onclick="changeBudget()">생활비 한도 변경</button>
+
+
+  <div class="card calendar-wrap">
+    <div class="view-toggle">
+      <button id="monthViewBtn" class="active" onclick="setCalendarView('month')">월간</button>
+      <button id="yearViewBtn" onclick="setCalendarView('year')">연간</button>
+    </div>
+
+    <div id="monthView">
+      <div class="cal-head">
+        <div class="cal-title" id="calTitle"></div>
+        <div class="cal-nav">
+          <button onclick="moveMonth(-1)">‹</button>
+          <button onclick="goToday()">오늘</button>
+          <button onclick="moveMonth(1)">›</button>
+        </div>
+      </div>
+      <div class="week">
+        <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+      </div>
+      <div class="calendar" id="calendar"></div>
+      <div class="day-detail" id="dayDetail"></div>
+    </div>
+
+    <div id="yearView" style="display:none">
+      <div class="cal-head">
+        <div class="cal-title" id="yearTitle"></div>
+        <div class="cal-nav">
+          <button onclick="moveYear(-1)">‹</button>
+          <button onclick="goThisYear()">올해</button>
+          <button onclick="moveYear(1)">›</button>
+        </div>
+      </div>
+      <div class="year-grid" id="yearGrid"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">전체 지출 내역</div>
+    <div id="history"></div>
+  </div>
+
+  <div class="setup" onclick="resetAll()">모든 지출 내역 초기화</div>
+</div>
+
+<div class="modal" id="modal" onclick="outsideClose(event)">
+  <div class="sheet">
+    <h2>금액 추가</h2><div id="selectedDateText" style="color:#777;font-size:14px;margin-top:-10px;margin-bottom:14px"></div>
+    <input id="amountInput" type="number" inputmode="numeric" min="0" placeholder="지출 금액을 입력하세요">
+    <input id="memoInput" type="text" maxlength="30" placeholder="사용처 (선택)" style="margin-top:10px;font-size:16px">
+    <div class="row">
+      <button class="btn secondary" onclick="closeAdd()">취소</button>
+      <button class="btn" onclick="addExpense()">추가</button>
+    </div>
+    <div class="note">예: 15000 → 15,000원이 지출에 추가됩니다.</div>
+  </div>
+</div>
+
+<script>
+const KEY="living-expense-v1";
+let data=JSON.parse(localStorage.getItem(KEY)||'null')||{
+ budget:400000, expenses:[]
+};
+
+function won(n){return Math.round(n).toLocaleString("ko-KR")+"원"}
+function save(){localStorage.setItem(KEY,JSON.stringify(data))}
+
+let calendarView="month";
+
+function setCalendarView(view){
+ calendarView=view;
+ document.getElementById("monthView").style.display=view==="month"?"block":"none";
+ document.getElementById("yearView").style.display=view==="year"?"block":"none";
+ document.getElementById("monthViewBtn").classList.toggle("active",view==="month");
+ document.getElementById("yearViewBtn").classList.toggle("active",view==="year");
+ if(view==="year") renderYearCalendar();
+}
+
+function moveYear(n){
+ calendarDate=new Date(calendarDate.getFullYear()+n,calendarDate.getMonth(),1);
+ renderYearCalendar();
+}
+function goThisYear(){
+ const now=new Date();
+ calendarDate=new Date(now.getFullYear(),now.getMonth(),1);
+ renderYearCalendar();
+}
+function monthTotal(y,m){
+ return data.expenses.reduce((sum,e)=>{
+   if(!e.dateKey)return sum;
+   const parts=e.dateKey.split("-");
+   return Number(parts[0])===y && Number(parts[1])===m+1 ? sum+e.amount : sum;
+ },0);
+}
+function renderYearCalendar(){
+ const y=calendarDate.getFullYear();
+ document.getElementById("yearTitle").textContent=y+"년";
+ const grid=document.getElementById("yearGrid");
+ const todayKey=dateKey(new Date());
+ let html="";
+ for(let m=0;m<12;m++){
+   const first=new Date(y,m,1);
+   const last=new Date(y,m+1,0);
+   const total=monthTotal(y,m);
+   let cells="";
+   for(let i=0;i<first.getDay();i++) cells+='<div class="mini-day"></div>';
+   for(let d=1;d<=last.getDate();d++){
+     const key=dateKey(new Date(y,m,d));
+     const spent=dayTotal(key);
+     const today=key===todayKey?"border:1px solid #222;":"";
+     cells+=`<div class="mini-day ${spent?'has-spent':''}" style="${today}" title="${spent?spent.toLocaleString('ko-KR')+'원':''}">${d}</div>`;
+   }
+   html+=`<div class="mini-month" onclick="openMonth(${y},${m})">
+     <div class="mini-title">${m+1}월</div>
+     <div class="mini-week"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+     <div class="mini-days">${cells}</div>
+     <div class="mini-total">${total.toLocaleString("ko-KR")}원</div>
+   </div>`;
+ }
+ grid.innerHTML=html;
+}
+function openMonth(y,m){
+ calendarDate=new Date(y,m,1);
+ selectedDate=new Date(y,m,1);
+ setCalendarView("month");
+ renderCalendar();
+ updateAddButton();
+}
+
+function normalizeExpenses(){
+ data.expenses.forEach(e=>{
+   if(!e.dateKey){
+     const parsed=new Date(e.date);
+     if(!isNaN(parsed)) e.dateKey=dateKey(parsed);
+   }
+   if(!e.dateTime)e.dateTime=e.date||"";
+ });
+ save();
+}
+
+function daysInCurrentMonth(){
+ const now=new Date();
+ return new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+}
+function dailyBudget(){
+ return Number(data.budget||0)/daysInCurrentMonth();
+}
+function calculateSaving(){
+ const now=new Date();
+ const y=now.getFullYear(), m=now.getMonth();
+ let saving=0;
+
+ // 오늘까지 지난 날짜만 계산합니다.
+ // 각 날짜의 실제 지출과 하루 기준 예산(월 한도/30)을 비교합니다.
+ for(let d=1; d<=now.getDate(); d++){
+   const key=dateKey(new Date(y,m,d));
+   const spent=dayTotal(key);
+   saving += dailyBudget()-spent;
+ }
+ return saving;
+}
+function renderSaving(){
+ const saving=calculateSaving();
+ const el=document.getElementById("savingValue");
+ if(!el)return;
+ const rounded=Math.round(saving);
+ el.textContent=(rounded>=0?"+":"-")+Math.abs(rounded).toLocaleString("ko-KR")+"원";
+ el.className="saving-value "+(rounded>=0?"plus":"minus");
+ const daily=document.getElementById("dailyBudget");
+ if(daily) daily.textContent=Math.round(dailyBudget()).toLocaleString("ko-KR")+"원";
+}
+
+function render(){
+ const spent=data.expenses.reduce((a,e)=>a+e.amount,0);
+ const remain=data.budget-spent;
+ const pct=data.budget>0?(spent/data.budget*100):0;
+ document.getElementById("spent").textContent=spent.toLocaleString("ko-KR");
+ document.getElementById("budget").textContent=data.budget.toLocaleString("ko-KR");
+ document.getElementById("remain").textContent=won(remain);
+ document.getElementById("percent").textContent=Math.round(pct)+"%";
+ document.getElementById("bar").style.width=Math.min(100,Math.max(0,pct))+"%";
+ document.getElementById("bar").style.background=pct>100?"#d93636":"#17191c";
+ document.getElementById("month").textContent=new Date().toLocaleDateString("ko-KR",{year:"numeric",month:"long"});
+ const h=document.getElementById("history");
+ if(!data.expenses.length){
+   h.innerHTML='<div class="empty">아직 지출 내역이 없습니다.</div>';
+   renderSaving();
+   return;
+ }
+ h.innerHTML=data.expenses.slice().reverse().map(e=>`
+   <div class="item">
+     <div><strong>${escapeHtml(e.memo||"생활비")}</strong><small>${e.date}</small></div>
+     <div><strong>${won(e.amount)}</strong>
+     <button class="delete" onclick="deleteExpense('${e.id}')">삭제</button></div>
+   </div>`).join("");
+ renderSaving();
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","\'":"&#039;"}[m]))}
+function updateAddButton(){
+ const y=selectedDate.getFullYear();
+ const m=selectedDate.getMonth()+1;
+ const d=selectedDate.getDate();
+ document.getElementById("addButtonText").textContent=
+   m+"월 "+d+"일에 금액 추가";
+}
+function openAdd(){
+ document.getElementById("modal").classList.add("show");
+ document.getElementById("amountInput").value="";
+ document.getElementById("memoInput").value="";
+ const y=selectedDate.getFullYear();
+ const m=selectedDate.getMonth()+1;
+ const d=selectedDate.getDate();
+ document.getElementById("selectedDateText").textContent=
+   "지출 날짜: "+y+"년 "+m+"월 "+d+"일";
+ setTimeout(()=>document.getElementById("amountInput").focus(),100);
+}
+function closeAdd(){document.getElementById("modal").classList.remove("show")}
+function outsideClose(e){if(e.target.id==="modal")closeAdd()}
+function addExpense(){
+ const amount=Number(document.getElementById("amountInput").value);
+ const memo=document.getElementById("memoInput").value.trim();
+ if(!amount||amount<0){alert("지출 금액을 입력해주세요.");return}
+ const selectedKey=dateKey(selectedDate);
+ const now=new Date();
+ data.expenses.push({
+   id:Date.now().toString(),amount,memo,
+   dateKey:selectedKey,
+   dateTime:selectedDate.toLocaleDateString("ko-KR",{year:"numeric",month:"numeric",day:"numeric"})+
+     " · 기록 "+now.toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"}),
+   date:selectedDate.toLocaleDateString("ko-KR",{month:"numeric",day:"numeric"})
+ });
+ save();render();renderSaving();closeAdd();
+}
+function deleteExpense(id){
+ data.expenses=data.expenses.filter(e=>e.id!==id);
+ save();render();
+}
+function changeBudget(){
+ const value=prompt("이번 달 생활비 한도를 입력하세요.",data.budget);
+ if(value===null)return;
+ const n=Number(value);
+ if(!n||n<0){alert("올바른 금액을 입력해주세요.");return}
+ data.budget=n;save();render();
+}
+function resetAll(){
+ if(confirm("모든 지출 내역을 삭제할까요?")){
+   data.expenses=[];save();render();
+ }
+}
+document.addEventListener("keydown",e=>{
+ if(e.key==="Escape")closeAdd();
+ if(e.key==="Enter" && document.getElementById("modal").classList.contains("show"))addExpense();
+});
+
+let calendarDate=new Date();
+let selectedDate=new Date();
+
+function dateKey(d){
+ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+function expensesForDate(key){
+ return data.expenses.filter(e=>e.dateKey===key);
+}
+function dayTotal(key){
+ return expensesForDate(key).reduce((sum,e)=>sum+e.amount,0);
+}
+function moveMonth(n){
+ calendarDate=new Date(calendarDate.getFullYear(),calendarDate.getMonth()+n,1);
+ renderCalendar();
+}
+function goToday(){
+ const now=new Date();
+ calendarDate=new Date(now.getFullYear(),now.getMonth(),1);
+ selectedDate=now;
+ renderCalendar();
+ updateAddButton();
+}
+function selectDate(y,m,d){
+ selectedDate=new Date(y,m,d);
+ renderCalendar();
+ updateAddButton();
+}
+function renderCalendar(){
+ const y=calendarDate.getFullYear(), m=calendarDate.getMonth();
+ document.getElementById("calTitle").textContent=
+   y+"년 "+(m+1)+"월";
+ const first=new Date(y,m,1);
+ const last=new Date(y,m+1,0);
+ const start=first.getDay();
+ const totalCells=Math.ceil((start+last.getDate())/7)*7;
+ const todayKey=dateKey(new Date());
+ const selectedKey=dateKey(selectedDate);
+ let html="";
+ for(let i=0;i<totalCells;i++){
+   const d=i-start+1;
+   const cur=new Date(y,m,d);
+   const inMonth=d>=1&&d<=last.getDate();
+   const key=dateKey(cur);
+   const total=inMonth?dayTotal(key):0;
+   let cls="day";
+   if(!inMonth)cls+=" muted";
+   if(key===todayKey)cls+=" today";
+   if(key===selectedKey)cls+=" selected";
+   html+=`<div class="${cls}" onclick="selectDate(${cur.getFullYear()},${cur.getMonth()},${cur.getDate()})">
+     <div class="day-num">${cur.getDate()}</div>
+     ${total?`<div class="day-spent">${total.toLocaleString("ko-KR")}원</div>`:""}
+   </div>`;
+ }
+ document.getElementById("calendar").innerHTML=html;
+ renderDayDetail();
+}
+function renderDayDetail(){
+ const key=dateKey(selectedDate);
+ const list=expensesForDate(key);
+ const title=selectedDate.getFullYear()+"년 "+(selectedDate.getMonth()+1)+"월 "+selectedDate.getDate()+"일";
+ const total=list.reduce((a,e)=>a+e.amount,0);
+ let html=`<div class="detail-head">${title} · ${total.toLocaleString("ko-KR")}원</div>`;
+ if(!list.length){
+   html+='<div class="empty">이날은 지출 내역이 없습니다.</div>';
+ }else{
+   html+=list.map(e=>`
+    <div class="item">
+      <div><strong>${escapeHtml(e.memo||"생활비")}</strong><small>${e.dateTime||e.date}</small></div>
+      <strong>${won(e.amount)}</strong>
+    </div>`).join("");
+ }
+ document.getElementById("dayDetail").innerHTML=html;
+}
+normalizeExpenses();
+render();
+renderCalendar();
+updateAddButton();
+</script>
+</body>
+</html>
