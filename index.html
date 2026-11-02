@@ -61,14 +61,12 @@ input:focus{border-color:#555}
 .row button{flex:1}
 .note{font-size:12px;color:#999;margin-top:10px}
 .setup{margin-top:15px;font-size:13px;color:#777;text-align:center;text-decoration:underline;cursor:pointer}
-
 .calendar-wrap{margin-top:20px}
 .saving-card{margin-top:14px}
 .saving-value{font-size:30px;font-weight:850;margin:6px 0}
 .saving-value.plus{color:#16803c}
 .saving-value.minus{color:#d93636}
 .saving-info{font-size:13px;color:#888;line-height:1.6}
-
 .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .cal-title{font-size:20px;font-weight:800}
 .cal-nav{display:flex;gap:6px}
@@ -87,7 +85,6 @@ input:focus{border-color:#555}
 .day.selected .day-spent{color:#fff}
 .day-detail{margin-top:12px}
 .detail-head{font-size:17px;font-weight:800;margin-bottom:9px}
-
 .view-toggle{display:flex;background:#eef0f3;border-radius:12px;padding:3px;margin-bottom:14px}
 .view-toggle button{flex:1;border:0;background:transparent;padding:10px;border-radius:9px;font-weight:700}
 .view-toggle button.active{background:#fff;box-shadow:0 2px 7px #00000012}
@@ -107,7 +104,6 @@ input:focus{border-color:#555}
 <div class="app">
   <h1>생활비 관리</h1>
   <div class="sub" id="month"></div>
-
   <div class="card total">
     <div class="label">현재 지출 / 생활비 한도</div>
     <div class="amount"><span id="spent">0</span> <span>/</span> <span id="budget">400,000</span><span>원</span></div>
@@ -117,7 +113,6 @@ input:focus{border-color:#555}
       <div>사용률<br><b id="percent">0%</b></div>
     </div>
   </div>
-
   <div class="card saving-card">
     <div class="label">아낀 금액</div>
     <div class="saving-value plus" id="savingValue">+0원</div>
@@ -130,13 +125,11 @@ input:focus{border-color:#555}
   <button class="btn" onclick="openAdd()">＋ <span id="addButtonText">금액 추가</span></button>
   <button class="btn secondary" onclick="changeBudget()">생활비 한도 변경</button>
 
-
   <div class="card calendar-wrap">
     <div class="view-toggle">
       <button id="monthViewBtn" class="active" onclick="setCalendarView('month')">월간</button>
       <button id="yearViewBtn" onclick="setCalendarView('year')">연간</button>
     </div>
-
     <div id="monthView">
       <div class="cal-head">
         <div class="cal-title" id="calTitle"></div>
@@ -152,7 +145,6 @@ input:focus{border-color:#555}
       <div class="calendar" id="calendar"></div>
       <div class="day-detail" id="dayDetail"></div>
     </div>
-
     <div id="yearView" style="display:none">
       <div class="cal-head">
         <div class="cal-title" id="yearTitle"></div>
@@ -165,7 +157,6 @@ input:focus{border-color:#555}
       <div class="year-grid" id="yearGrid"></div>
     </div>
   </div>
-
   <div class="section">
     <div class="section-title">전체 지출 내역</div>
     <div id="history"></div>
@@ -173,7 +164,6 @@ input:focus{border-color:#555}
 
   <div class="setup" onclick="resetAll()">모든 지출 내역 초기화</div>
 </div>
-
 <div class="modal" id="modal" onclick="outsideClose(event)">
   <div class="sheet">
     <h2>금액 추가</h2><div id="selectedDateText" style="color:#777;font-size:14px;margin-top:-10px;margin-bottom:14px"></div>
@@ -186,7 +176,6 @@ input:focus{border-color:#555}
     <div class="note">예: 15000 → 15,000원이 지출에 추가됩니다.</div>
   </div>
 </div>
-
 <script>
 const KEY="living-expense-v1";
 let data=JSON.parse(localStorage.getItem(KEY)||'null')||{
@@ -197,7 +186,6 @@ function won(n){return Math.round(n).toLocaleString("ko-KR")+"원"}
 function save(){localStorage.setItem(KEY,JSON.stringify(data))}
 
 let calendarView="month";
-
 function setCalendarView(view){
  calendarView=view;
  document.getElementById("monthView").style.display=view==="month"?"block":"none";
@@ -206,7 +194,6 @@ function setCalendarView(view){
  document.getElementById("yearViewBtn").classList.toggle("active",view==="year");
  if(view==="year") renderYearCalendar();
 }
-
 function moveYear(n){
  calendarDate=new Date(calendarDate.getFullYear()+n,calendarDate.getMonth(),1);
  renderYearCalendar();
@@ -257,7 +244,6 @@ function openMonth(y,m){
  renderCalendar();
  updateAddButton();
 }
-
 function normalizeExpenses(){
  data.expenses.forEach(e=>{
    if(!e.dateKey){
@@ -268,7 +254,6 @@ function normalizeExpenses(){
  });
  save();
 }
-
 function daysInCurrentMonth(){
  const now=new Date();
  return new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
@@ -280,9 +265,6 @@ function calculateSaving(){
  const now=new Date();
  const y=now.getFullYear(), m=now.getMonth();
  let saving=0;
-
- // 오늘까지 지난 날짜만 계산합니다.
- // 각 날짜의 실제 지출과 하루 기준 예산(월 한도/30)을 비교합니다.
  for(let d=1; d<=now.getDate(); d++){
    const key=dateKey(new Date(y,m,d));
    const spent=dayTotal(key);
@@ -300,9 +282,16 @@ function renderSaving(){
  const daily=document.getElementById("dailyBudget");
  if(daily) daily.textContent=Math.round(dailyBudget()).toLocaleString("ko-KR")+"원";
 }
-
 function render(){
- const spent=data.expenses.reduce((a,e)=>a+e.amount,0);
+ // 이번 달 지출만 상단 합계에 반영합니다.
+ const now=new Date();
+ const y=now.getFullYear(), m=now.getMonth()+1;
+ const spent=data.expenses.reduce((sum,e)=>{
+   const parts=(e.dateKey||"").split("-");
+   return Number(parts[0])===y && Number(parts[1])===m
+     ? sum+e.amount : sum;
+ },0);
+
  const remain=data.budget-spent;
  const pct=data.budget>0?(spent/data.budget*100):0;
  document.getElementById("spent").textContent=spent.toLocaleString("ko-KR");
@@ -382,10 +371,8 @@ document.addEventListener("keydown",e=>{
  if(e.key==="Escape")closeAdd();
  if(e.key==="Enter" && document.getElementById("modal").classList.contains("show"))addExpense();
 });
-
 let calendarDate=new Date();
 let selectedDate=new Date();
-
 function dateKey(d){
  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 }
